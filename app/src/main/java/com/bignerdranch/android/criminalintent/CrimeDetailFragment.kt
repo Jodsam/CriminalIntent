@@ -3,9 +3,7 @@ package com.bignerdranch.android.criminalintent
 import android.os.Build
 import android.os.Bundle
 import android.text.format.DateFormat
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
@@ -32,6 +30,10 @@ class CrimeDetailFragment : Fragment() {
     private val args: CrimeDetailFragmentArgs by navArgs()
     private val crimeDetailViewModel: CrimeDetailViewModel by viewModels {
         CrimeDetailViewModelFactory(args.crimeId)
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
     }
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -94,6 +96,8 @@ class CrimeDetailFragment : Fragment() {
         }
 
 
+
+
     }
     override fun onDestroyView() {
         super.onDestroyView()
@@ -119,5 +123,27 @@ class CrimeDetailFragment : Fragment() {
 
         }
     }
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.fragment_crime_detail, menu)
+    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.delete_crime -> {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    crimeDetailViewModel.crime.value?.let {
+                            crime ->  crimeDetailViewModel.deleteCrime(crime = crime)
+                        findNavController().popBackStack()
+                    }
 
-}
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
+    }
+
+
+
