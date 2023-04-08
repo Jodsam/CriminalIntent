@@ -1,5 +1,6 @@
 package com.bignerdranch.android.criminalintent
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -13,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -25,6 +27,9 @@ import androidx.navigation.fragment.navArgs
 import com.bignerdranch.android.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
 import java.util.*
+import android.Manifest
+import androidx.core.app.ActivityCompat
+
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
 class CrimeDetailFragment : Fragment() {
@@ -43,6 +48,8 @@ class CrimeDetailFragment : Fragment() {
     ) { uri: Uri? ->
         uri?.let { parseContactSelection(it) }
     }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -61,6 +68,10 @@ class CrimeDetailFragment : Fragment() {
 
 
         binding.apply {
+
+            crimeCall.setOnClickListener {
+                requestContactsPermission()
+            }
 
             crimeSuspect.setOnClickListener {
                 selectSuspect.launch(null)
@@ -229,9 +240,69 @@ class CrimeDetailFragment : Fragment() {
             )
         return resolvedActivity != null
     }
+    @SuppressLint("Range")
+    private fun parseContactCall() {
+        val phoneURI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+        val queryFields = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val contactId = crimeDetailViewModel.crime.value?.suspect ?: return
+
+        val queryCursor = requireActivity().contentResolver
+            .query(phoneURI, queryFields, "${ContactsContract.Contacts.DISPLAY_NAME} = ?",
+                arrayOf(contactId), null)
+
+        queryCursor?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val phoneNumber = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER))
+                makePhoneCall(phoneNumber)
+            } else {
+                Toast.makeText(requireContext(), "No phone number found for contact", Toast.LENGTH_SHORT).show()
+            }
+        } ?: run {
+            Toast.makeText(requireContext(), "Failed to access contacts", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun makePhoneCall(phoneNumber: String) {
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.CALL_PHONE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(Manifest.permission.CALL_PHONE),
+                REQUEST_CALL_PHONE_PERMISSION
+            )
+        } else {
+            val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
+            startActivity(dialIntent)
+        }
+    }
+    private val REQUEST_READ_CONTACTS = 1
+    private val REQUEST_CALL_PHONE_PERMISSION = 1
 
 
+    private fun requestContactsPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_READ_CONTACTS)
+        } else {
+            // Permission has already been granted
+            parseContactCall()
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQUEST_READ_CONTACTS -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permission has been granted, parse contact call
+                    parseContactCall()
+                } else {
+                    // Permission denied
+                    Toast.makeText(requireContext(), "Permission denied to access contacts", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 }
-
-
-
