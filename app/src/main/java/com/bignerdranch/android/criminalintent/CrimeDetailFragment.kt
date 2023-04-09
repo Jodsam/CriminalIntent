@@ -235,6 +235,11 @@ class CrimeDetailFragment : Fragment() {
             crimeTime.setOnClickListener {
                 findNavController().navigate(CrimeDetailFragmentDirections.selectTime(crime.date))
             }
+            crimePhoto.setOnClickListener{
+                if (crime.photoFileName != null)
+                findNavController().navigate(CrimeDetailFragmentDirections.checkPhoto(crime.photoFileName))
+                else Toast.makeText(requireContext(), "There is no Photo", Toast.LENGTH_LONG).show()
+            }
             updatePhoto(crime.photoFileName)
 
         }
