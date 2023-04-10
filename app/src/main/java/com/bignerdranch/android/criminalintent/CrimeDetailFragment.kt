@@ -29,6 +29,10 @@ import kotlinx.coroutines.launch
 import java.util.*
 import android.Manifest
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
+import androidx.core.view.doOnLayout
+import com.bignerdranch.android.criminalintent.database.getScaledBitmap
+import java.io.File
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
@@ -43,11 +47,43 @@ class CrimeDetailFragment : Fragment() {
     private val crimeDetailViewModel: CrimeDetailViewModel by viewModels {
         CrimeDetailViewModelFactory(args.crimeId)
     }
+    private fun updatePhoto(photoFileName: String?) {
+        if (binding.crimePhoto.tag != photoFileName) {
+            val photoFile = photoFileName?.let {
+                File(requireContext().applicationContext.filesDir, it)
+            }
+            if (photoFile?.exists() == true) {
+                binding.crimePhoto.doOnLayout { measuredView ->
+                    val scaledBitmap = getScaledBitmap(
+                        photoFile.path,
+                        measuredView.width,
+                        measuredView.height
+                    )
+                    binding.crimePhoto.setImageBitmap(scaledBitmap)
+                    binding.crimePhoto.tag = photoFileName
+                }
+            } else {
+                binding.crimePhoto.setImageBitmap(null)
+                binding.crimePhoto.tag = null
+            }
+        }
+    }
+
     private val selectSuspect = registerForActivityResult(
         ActivityResultContracts.PickContact()
     ) { uri: Uri? ->
         uri?.let { parseContactSelection(it) }
     }
+    private val takePhoto = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { didTakePhoto: Boolean ->
+        if (didTakePhoto && photoName != null) {
+            crimeDetailViewModel.updateCrime { oldCrime ->
+                oldCrime.copy(photoFileName = photoName)
+            }
+        }
+    }
+    private var photoName: String? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +104,27 @@ class CrimeDetailFragment : Fragment() {
 
 
         binding.apply {
+
+
+            crimeCamera.setOnClickListener {
+                val captureImageIntent = takePhoto.contract.createIntent(
+                    requireContext(),
+                    Uri.parse("")
+                )
+                crimeCamera.isEnabled = canResolveIntent(captureImageIntent)
+
+                photoName = "IMG_${Date()}.JPG"
+                val photoFile = File(requireContext().applicationContext.filesDir,
+                    photoName)
+                val photoUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "com.bignerdranch.android.criminalintent.fileprovider",
+                    photoFile
+                )
+                takePhoto.launch(photoUri)
+
+            }
+
 
             crimeCall.setOnClickListener {
                 requestContactsPermission()
@@ -178,7 +235,12 @@ class CrimeDetailFragment : Fragment() {
             crimeTime.setOnClickListener {
                 findNavController().navigate(CrimeDetailFragmentDirections.selectTime(crime.date))
             }
-
+            crimePhoto.setOnClickListener{
+                if (crime.photoFileName != null)
+                findNavController().navigate(CrimeDetailFragmentDirections.checkPhoto(crime.photoFileName))
+                else Toast.makeText(requireContext(), "There is no Photo", Toast.LENGTH_LONG).show()
+            }
+            updatePhoto(crime.photoFileName)
 
         }
     }
@@ -271,6 +333,7 @@ class CrimeDetailFragment : Fragment() {
                 requireActivity(),
                 arrayOf(Manifest.permission.CALL_PHONE),
                 REQUEST_CALL_PHONE_PERMISSION
+
             )
         } else {
             val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phoneNumber"))
