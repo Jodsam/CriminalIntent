@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Крімінал Інтент</string>
+    <string name="crime_title_hint">Введіть назву злочина</string>
+    <string name="crime_title_label">Заголовок</string>
+    <string name="crime_details_label">Деталі</string>
+    <string name="crime_solved_label">Вирішено</string>
+    <string name="new_crime">Новий злочин</string>
+    <string name="delete_crime">Видалити злочин</string>
+    <string name="crime_suspect_text">Вибрати підозрюваного</string>
+    <string name="crime_report_text">Надіслати звіт злочину</string>
+    <string name="crime_report">%1$s!
+The crime was discovered on %2$s. %3$s, and %4$s
+</string>
+    <string name="crime_report_solved">Справу закрито</string>
+    <string name="crime_report_unsolved">Справу відкрито</string>
+    <string name="crime_report_no_suspect">Нема підозрюваних</string>
+    <string name="crime_report_suspect">Підозрюваним є %s.</string>
+    <string name="crime_report_subject">Звіт</string>
+    <string name="send_report">Надіслати звіт за подомоги..</string>
+    <string name="crime_call">Подзвонити</string>
+</resources>

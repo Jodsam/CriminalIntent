@@ -79,7 +79,7 @@ class CrimeDetailFragment : Fragment() {
     ) { didTakePhoto: Boolean ->
         if (didTakePhoto && photoName != null) {
             crimeDetailViewModel.updateCrime { oldCrime ->
-                oldCrime.copy(photoFileName = photoName)
+                oldCrime.copy(photoFileName = photoName!!)
             }
         }
     }

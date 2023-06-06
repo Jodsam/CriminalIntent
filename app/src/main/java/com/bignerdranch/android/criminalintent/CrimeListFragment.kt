@@ -83,7 +83,9 @@ class CrimeListFragment : Fragment() {
                 id = UUID.randomUUID(),
                 title = "",
                 date = Date(),
-                isSolved = false
+                isSolved = false,
+                suspect = "",
+                photoFileName = null
             )
             crimeListViewModel.addCrime(newCrime)
             findNavController().navigate(
